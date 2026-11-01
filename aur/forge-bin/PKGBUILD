@@ -1,0 +1,23 @@
+# Maintainer: Robert Hesselmann <hesselmann.robert@gmail.com>
+pkgname=forge-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="PHPStorm-style IDE for PHP, web and Lua (prebuilt release)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Reeperk/Forge"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator' 'openssl' 'hicolor-icon-theme')
+provides=("forge=$pkgver")
+conflicts=('forge' 'forge-git')
+options=('!strip' '!debug')
+# The release carries the .deb that Tauri builds; makepkg unpacks it into $srcdir.
+source_x86_64=("$pkgname-$pkgver-amd64.deb::$url/releases/download/v$pkgver/Forge_${pkgver}_amd64.deb")
+source_aarch64=("$pkgname-$pkgver-arm64.deb::$url/releases/download/v$pkgver/Forge_${pkgver}_arm64.deb")
+# Fill in with `updpkgsums` once the release exists.
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+
+package() {
+  bsdtar -xf "$srcdir"/data.tar.* -C "$pkgdir"
+  chmod -R go-w "$pkgdir"
+}

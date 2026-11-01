@@ -2,6 +2,11 @@
 
 Distribution of Forge outside its own repository.
 
+## AUR (Arch)
+
+`aur/` holds the PKGBUILDs of `forge-bin` (GitHub releases) and `forge-git` (latest source); see
+[aur/README.md](aur/README.md).
+
 ## apt repository (Debian and Ubuntu)
 
 `deb/build-repo.sh` builds a signed apt repository with [aptly](https://www.aptly.info/) from the
