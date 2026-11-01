@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forge apt repository</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; color: #222; }
+      pre { background: #f3f3f5; padding: 1rem; overflow-x: auto; border-radius: 6px; }
+      @media (prefers-color-scheme: dark) { body { background: #131316; color: #ddd; } pre { background: #1d1d22; } }
+    </style>
+  </head>
+  <body>
+    <h1>Forge apt repository</h1>
+    <p>Debian 12+ and Ubuntu 22.04+, amd64 and arm64.</p>
+    <pre>sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL "$BASE/forge-archive-keyring.asc" | sudo tee /etc/apt/keyrings/forge.asc &gt; /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/forge.asc] $BASE stable main" | sudo tee /etc/apt/sources.list.d/forge.list
+sudo apt update &amp;&amp; sudo apt install forge</pre>
+    <p>Replace <code>$BASE</code> with the address of this page, without a trailing slash.</p>
+    <script>
+      const base = location.origin + location.pathname.replace(/\/[^/]*$/, "");
+      document.querySelector("pre").textContent = document.querySelector("pre").textContent.replaceAll("$BASE", base);
+    </script>
+  </body>
+</html>
