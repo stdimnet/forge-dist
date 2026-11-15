@@ -10,7 +10,9 @@ depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator' 'openssl' 'hicolor-ic
 makedepends=('git' 'rust' 'cargo' 'nodejs' 'pnpm' 'librsvg' 'xdotool' 'base-devel')
 provides=('forge-ide')
 conflicts=('forge-ide' 'forge' 'foundry')
-options=('!strip' '!debug')
+# '!lto': makepkg's LTO flags turn C dependencies (aws-lc-sys) into GCC bitcode that rust-lld
+# cannot link.
+options=('!strip' '!debug' '!lto')
 source=("$pkgname::git+$url.git"
         'forge.desktop')
 sha256sums=('SKIP'

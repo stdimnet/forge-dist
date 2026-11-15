@@ -3,7 +3,7 @@
 | Package | Source | Updates |
 | --- | --- | --- |
 | `forge-ide-bin` | the amd64 `.deb` of a GitHub release of `stdimnet/forge` | automatic: the workflow **Publish AUR package** |
-| `forge-ide-git` | the default branch, built with `pnpm tauri build --no-bundle` | none; `pkgver()` follows the commits |
+| `forge-ide-git` | the default branch, built with `pnpm tauri build --no-bundle` | automatic: the workflow **Publish AUR git package** when its PKGBUILD changes |
 
 Both install `/usr/bin/forge`, the desktop entry and the icons, and conflict with each other and
 with every other package that installs a `forge` command (`forge-bin`, Foundry's `foundry`,
@@ -27,18 +27,20 @@ the maintainer's AUR account (My Account | SSH Public Key). Use a separate key f
 republish a release by hand, start the workflow in the Actions tab with its tag. The PKGBUILD
 here is the template; the version in it is not updated by the workflow.
 
-**forge-ide-git** follows the commits through `pkgver()` and only needs a push when the PKGBUILD
-itself changes. On an Arch system:
+**forge-ide-git** builds the latest commit of Forge on the user's machine; `pkgver()` follows
+the commits, so a new Forge commit needs no push. The workflow **Publish AUR git package**
+(`.github/workflows/aur-git.yml`) pushes `PKGBUILD`, `.SRCINFO` and `forge.desktop` to
+`ssh://aur@aur.archlinux.org/forge-ide-git.git` whenever `aur/forge-ide-git/` changes on `main`
+(the first push creates the package). It fetches the source once so `.SRCINFO` shows a current
+version, and uses the same `AUR_SSH_PRIVATE_KEY`. To test the package on an Arch system:
 
 ```sh
 cd aur/forge-ide-git
-makepkg -si               # build and test it
-makepkg --printsrcinfo > .SRCINFO
+makepkg -si
 ```
 
-Then copy `PKGBUILD`, `.SRCINFO` and `forge.desktop` into a clone of
-`ssh://aur@aur.archlinux.org/forge-ide-git.git`, commit and push. Keep AUR clones outside this
-repository; a clone inside it hides its files from this repository's git.
+Keep AUR clones outside this repository; a clone inside it hides its files from this
+repository's git.
 
 `forge-ide-git` builds from `stdimnet/forge`, which pulls `php-lsp` from a git dependency
 (`packs/phpforge/builtin-lsp/Cargo.toml`). Both repositories are public, so the build works
