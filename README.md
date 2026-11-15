@@ -4,7 +4,7 @@ Distribution of Forge outside its own repository.
 
 ## AUR (Arch)
 
-`aur/` holds the PKGBUILDs of `forge-bin` (GitHub releases) and `forge-git` (latest source); see
+`aur/` holds the PKGBUILDs of `forge-ide-bin` (GitHub releases) and `forge-ide-git` (latest source); see
 [aur/README.md](aur/README.md).
 
 ## apt repository (Debian and Ubuntu)
@@ -44,3 +44,23 @@ themselves.
 
 The script was written without a test run against a real signing key; run the workflow once
 and check `apt update` on a Debian and an Ubuntu machine before announcing the repository.
+
+## Release signing key
+
+`keys/forge-release.asc` is the public key that signs `SHA256SUMS` of every Forge release
+(`SHA256SUMS.asc`):
+
+```
+Forge Releases <releases@forge.hesselmann.me>
+EF5D E928 3333 940B A443  2214 A508 B1D9 C16A 79DA
+```
+
+Verify a download:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Reeperk/forge-dist/main/keys/forge-release.asc | gpg --import
+gpg --verify SHA256SUMS.asc SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+```
+
+Check that the fingerprint `gpg --verify` prints matches the one above.
