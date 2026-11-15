@@ -1,0 +1,95 @@
+name: Publish AUR package
+
+# Updates the AUR package forge-ide-bin to a Forge release: sets the version and the checksum
+# of the release's amd64 .deb in aur/forge-ide-bin/PKGBUILD, generates .SRCINFO and pushes both
+# to ssh://aur@aur.archlinux.org/forge-ide-bin.git. Forge's release workflow starts it after
+# publishing a release (repository_dispatch event `forge-release`); it can also be started by
+# hand for any release tag.
+#
+# Secret: AUR_SSH_PRIVATE_KEY, the private SSH key registered with the AUR account that
+# maintains forge-ide-bin. Without it the package is built and checked but not pushed.
+on:
+  repository_dispatch:
+    types: [forge-release]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Forge release tag, e.g. v0.1.1-beta.3"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aur
+  cancel-in-progress: false
+
+env:
+  SOURCE_REPO: ${{ github.event.client_payload.repo || 'stdimnet/forge' }}
+  TAG: ${{ github.event.client_payload.tag || inputs.tag }}
+  PKG: forge-ide-bin
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git openssh github-cli
+
+      - uses: actions/checkout@v4
+
+      - name: Set version and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$TAG" in v*) ;; *) echo "::error::not a release tag: '$TAG'"; exit 1 ;; esac
+          ver="${TAG#v}"
+          deb="Forge_${ver}_amd64.deb"
+          mkdir -p /tmp/release
+          gh release download "$TAG" -R "$SOURCE_REPO" --pattern "$deb" --dir /tmp/release
+          sum="$(sha256sum "/tmp/release/$deb" | cut -d' ' -f1)"
+          cd "aur/$PKG"
+          sed -i \
+            -e "s/^_ver=.*/_ver=$ver/" \
+            -e "s/^pkgrel=.*/pkgrel=1/" \
+            -e "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('$sum')/" \
+            PKGBUILD
+          grep -E '^(_ver|pkgrel|sha256sums_x86_64)=' PKGBUILD
+
+      - name: Check the package and generate .SRCINFO
+        # makepkg refuses to run as root.
+        run: |
+          useradd -m builder
+          chown -R builder "aur/$PKG"
+          cd "aur/$PKG"
+          su builder -c 'makepkg --verifysource --noconfirm && makepkg --printsrcinfo > .SRCINFO'
+          cat .SRCINFO
+
+      - name: Push to the AUR
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$AUR_SSH_PRIVATE_KEY" ]; then
+            echo "::notice::No AUR_SSH_PRIVATE_KEY secret: $PKG was checked but not pushed."
+            exit 0
+          fi
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          # Pinned host key (fingerprint SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4).
+          echo "aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN" > ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur -o IdentitiesOnly=yes"
+          git clone "ssh://aur@aur.archlinux.org/$PKG.git" /tmp/aur
+          cp "aur/$PKG/PKGBUILD" "aur/$PKG/.SRCINFO" /tmp/aur/
+          cd /tmp/aur
+          git config user.name "ExtremTechniker"
+          git config user.email "aur@extremtechniker.io"
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "$PKG is already at ${TAG#v}"
+            exit 0
+          fi
+          git commit -m "Update to ${TAG#v}"
+          git push origin HEAD:master

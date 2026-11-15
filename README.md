@@ -32,14 +32,14 @@ The page itself shows the commands with its own address.
 2. Add these repository secrets (Settings | Secrets and variables | Actions):
    - `GPG_PRIVATE_KEY`: `gpg --armor --export-secret-keys <fingerprint>`
    - `GPG_PASSPHRASE`: its passphrase (empty if none)
-   - `SOURCE_TOKEN`: a token that can read the releases of `Reeperk/Forge` (not needed once it is public)
 3. Settings | Pages | Source: **GitHub Actions**. GitHub Pages of a private repository needs a
    paid plan, and the published site is public either way.
 
 ### Publish
 
-After a Forge release is published, run the workflow **Publish apt repository** (Actions tab).
-It rebuilds the repository from the latest releases (default 5), so old versions drop out by
+Forge's release workflow starts **Publish apt repository** after it publishes a release
+(event `forge-release`, sent with Forge's `DIST_DISPATCH_TOKEN` secret). You can also start it
+by hand in the Actions tab. It rebuilds the repository from the latest releases (default 5), so old versions drop out by
 themselves.
 
 The script was written without a test run against a real signing key; run the workflow once
@@ -58,7 +58,7 @@ EF5D E928 3333 940B A443  2214 A508 B1D9 C16A 79DA
 Verify a download:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Reeperk/forge-dist/main/keys/forge-release.asc | gpg --import
+curl -fsSL https://raw.githubusercontent.com/stdimnet/forge-dist/main/keys/forge-release.asc | gpg --import
 gpg --verify SHA256SUMS.asc SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```

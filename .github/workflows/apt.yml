@@ -1,8 +1,11 @@
 name: Publish apt repository
 
 # Rebuilds the whole repository from the .deb files of the latest Forge releases and
-# publishes it on GitHub Pages. Start it by hand after a new Forge release.
+# publishes it on GitHub Pages. Forge's release workflow starts it after publishing a release
+# (repository_dispatch event `forge-release`); it can also be started by hand.
 on:
+  repository_dispatch:
+    types: [forge-release]
   workflow_dispatch:
     inputs:
       releases:
@@ -21,7 +24,7 @@ concurrency:
 
 env:
   # The repository whose releases carry the .deb files.
-  SOURCE_REPO: Reeperk/Forge
+  SOURCE_REPO: ${{ github.event.client_payload.repo || 'stdimnet/forge' }}
 
 jobs:
   build:
@@ -34,9 +37,8 @@ jobs:
 
       - name: Download the .deb files
         env:
-          # A token that can read the releases of SOURCE_REPO (needed while it is private).
-          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
-          RELEASES: ${{ inputs.releases }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASES: ${{ inputs.releases || '5' }}
         run: |
           mkdir debs
           for tag in $(gh release list -R "$SOURCE_REPO" --limit "$RELEASES" --json tagName --jq '.[].tagName'); do
