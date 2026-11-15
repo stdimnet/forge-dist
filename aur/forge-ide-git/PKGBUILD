@@ -1,5 +1,5 @@
 # Maintainer: ExtremTechniker <aur@extremtechniker.io>
-pkgname=forge-git
+pkgname=forge-ide-git
 pkgver=0.1.0.r0.g0000000
 pkgrel=1
 pkgdesc="PHPStorm-style IDE for PHP, web and Lua (built from the latest source)"
@@ -8,8 +8,8 @@ url="https://github.com/Reeperk/Forge"
 license=('MIT')
 depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator' 'openssl' 'hicolor-icon-theme')
 makedepends=('git' 'rust' 'cargo' 'nodejs' 'pnpm' 'librsvg' 'xdotool' 'base-devel')
-provides=('forge')
-conflicts=('forge' 'forge-bin')
+provides=('forge-ide')
+conflicts=('forge-ide' 'forge' 'foundry')
 options=('!strip' '!debug')
 source=("$pkgname::git+$url.git"
         'forge.desktop')
@@ -18,10 +18,11 @@ sha256sums=('SKIP'
 
 pkgver() {
   cd "$pkgname"
-  # 0.1.0 from Cargo.toml, then the commits since and the short hash.
+  # The version from Cargo.toml without "-" (0.1.1-beta.1 -> 0.1.1beta.1, sorted before
+  # 0.1.1), then the commits since and the short hash.
   local ver
   ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
-  printf '%s.r%s.g%s' "$ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  printf '%s.r%s.g%s' "${ver//-/}" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 build() {
